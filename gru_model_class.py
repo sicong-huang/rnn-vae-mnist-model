@@ -25,7 +25,6 @@ class ModelStruct:
         self.convert_layer = Lambda(self.__convert, name='convert_layer')
         self.decode_gru = GRU(self.latent_size, return_sequences=True, return_state=True)  # decoder GRU
         self.output_dense = Dense(self.input_size, activation='sigmoid')
-        # self.output_layer = TimeDistributed(self.output_dense)  # hidden state to output
 
     # return an end-to-end VAE for training
     def assemble_vae_train(self):
