@@ -1,6 +1,7 @@
+# this is the original all_in_one implementation, which did not seperate encoder and decoder
+
 import numpy as np
 import keras
-# import matplotlib.pyplot as plt
 
 from keras.layers import Input, Dense, Lambda, GRU, TimeDistributed
 from keras.models import Model
@@ -17,19 +18,16 @@ hidden_state = GRU(latent_size)(encode_in)
 mean = Dense(latent_size)(hidden_state)
 log_std = Dense(latent_size)(hidden_state)
 
-encoder_train = Model(encode_in, [mean, log_std], name='encoder')
-
 # define sampling layer
 def sampling(args):
     sample_mean, sample_log_std = args
     epsilon = K.random_normal(shape=(batch_size, latent_size))
     return sample_mean + K.exp(sample_log_std) * epsilon
 
-sampling_layer = Lambda(sampling, name='sampling_layer')
+z = Lambda(sampling, name='sampling_layer')([mean, log_std])
 
 ### define decoders
 # decoder GRU
-initial_state = Input(batch_shape=(batch_size, latent_size), name='decoder_initial_state')
 decode_gru = GRU(latent_size, return_sequences=True, return_state=True)
 
 # decoder for training
@@ -38,24 +36,18 @@ def convert(data):
     data = K.slice(data, [0, 0, 0], [batch_size, seq_len, input_size])
     return data
 
-decode_in_train = Input(batch_shape=(batch_size, seq_len, input_size), name='decoder_in')
-decode_in = Lambda(convert, name='convert_decoder_input')(decode_in_train)
-decode_out_train, _ = decode_gru(decode_in, initial_state=initial_state)
+decode_in = Lambda(convert, name='convert_decoder_input')(encode_in)
+decode_out_train, _ = decode_gru(decode_in, initial_state=z)
 decode_out_train = TimeDistributed(Dense(input_size))(decode_out_train)
 
-decoder_train = Model([initial_state, decode_in_train], decode_out_train, name='decoder_train')
 
 # end-to-end autoencoder
-vae_in = Input(batch_shape=(batch_size, seq_len, input_size), name='VAE_input')
-distribution = encoder_train(vae_in)
-z = sampling_layer(distribution)
-vae_out = decoder_train([z, vae_in])
 
-vae = Model(vae_in, vae_out)
+vae = Model(encode_in, decode_out_train)
 
 # define loss
-reconstruction_loss = K.mean(K.binary_crossentropy(K.reshape(vae_in, shape=(batch_size, -1)), K.reshape(vae_out, shape=(batch_size, -1)))) * input_size * seq_len
-kl_loss = -0.5 * K.mean(1 + distribution[1] - K.square(distribution[0]) - K.exp(distribution[1]))
+reconstruction_loss = K.mean(K.binary_crossentropy(K.reshape(encode_in, shape=(batch_size, -1)), K.reshape(decode_out_train, shape=(batch_size, -1)))) * input_size * seq_len
+kl_loss = -0.5 * K.mean(1 + log_std - K.square(mean) - K.exp(log_std))
 vae_loss = reconstruction_loss + kl_loss
 
 # define variance metric function
