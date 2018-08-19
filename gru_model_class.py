@@ -78,6 +78,7 @@ class ModelStruct:
         return Model([decode_in, init_state], [decode_out, hidden_state], name='decoder')
 
     # helper method used to check inputs are valid
+    # throws corresponding exceptions when expectations are not met
     def __check_inputs(self, batch_shape, latent_size):
         batch_shape_type = type(batch_shape)
         batch_shape_len = len(batch_shape)
@@ -86,6 +87,8 @@ class ModelStruct:
             raise TypeError('expect "batch_shape" to be type tuple, instead got {}'.format(batch_shape_type))
         elif batch_shape_len != 3:
             raise ValueError('expect "batch_shape" to have length == 3, instead got {}'.format(batch_shape_len))
+        elif not all(i > 0 for i in batch_shape):
+            raise ValueError('all elements in batch_shape must be greater than 0, instead got {}'.format(batch_shape))
         elif latent_size_type != int:
             raise TypeError('expect "latent_size" to be type int, instead got {}'.format(latent_size_type))
         elif latent_size <= 0:

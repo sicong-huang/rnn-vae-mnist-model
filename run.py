@@ -20,7 +20,7 @@ decoder = model_struct.assemble_decoder_infer()
 
 # load data
 def load_data():
-    with np.load('mnist.npz') as f:
+    with np.load('data/mnist.npz') as f:
         x_train, y_train = f['x_train'], f['y_train']
         x_train = x_train / 255
         x_test, y_test = f['x_test'], f['y_test']
