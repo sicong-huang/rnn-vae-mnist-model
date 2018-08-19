@@ -2,14 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 # from keras.utils.vis_utils import plot_model
 from gru_model_class import ModelStruct
+import data_utils
 
 batch_size = 128
 seq_len = 28
 input_size = 28
 latent_size = 64
-
 batch_shape = (batch_size, seq_len, input_size)
 
+# construct models
 model_struct = ModelStruct(batch_shape, latent_size)
 vae = model_struct.assemble_vae_train()
 encoder = model_struct.assemble_encoder_infer()
@@ -18,26 +19,13 @@ decoder = model_struct.assemble_decoder_infer()
 # plot_model(vae, to_file='model_plot.png', show_shapes=True, show_layer_names=True)
 # print('done plotting')
 
-# load data
-def load_data():
-    with np.load('data/mnist.npz') as f:
-        x_train, y_train = f['x_train'], f['y_train']
-        x_train = x_train / 255
-        x_test, y_test = f['x_test'], f['y_test']
-        x_test = x_test / 255
-    return x_train, y_train, x_test, y_test
+# load data and fit it to batch size
+x_train, _, x_test, _ = data_utils.load_data()
+x_train = data_utils.fit_batch(x_train, batch_size)
+x_test = data_utils.fit_batch(x_test, batch_size)
 
-def fit_batch(data, batch):
-    data_points = data.shape[0]
-    remainder = data_points % batch
-    return data[:data_points - remainder]
-
-x_train, _, x_test, _ = load_data()
-x_train = fit_batch(x_train, batch_size)
-x_test = fit_batch(x_test, batch_size)
-
+# display compile and fit model
 vae.summary()
-
 vae.compile(optimizer='adam')
 vae.fit(x_train, batch_size=batch_size, epochs=5, shuffle=True, validation_data=(x_test, None))
 
