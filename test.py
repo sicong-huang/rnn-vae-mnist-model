@@ -1,5 +1,5 @@
 import numpy as np
-from gru_model_class import ModelStruct
+from model import ModelStruct
 
 batch_size = 2
 seq_len = 28
