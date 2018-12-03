@@ -43,7 +43,7 @@ if __name__ == '__main__':
                         help='batch size for training (deault 128)')
     parser.add_argument('--epochs', '-e', type=int, default=10,
                         help='number of training epochs to perform (default 10)')
-    parser.add_argument('--latent', '-l', type=int, default=50,
+    parser.add_argument('--latent', '-l', type=int, default=64,
                         help='number of dimensions in latent representation (default 32)')
     args = parser.parse_args()
     
